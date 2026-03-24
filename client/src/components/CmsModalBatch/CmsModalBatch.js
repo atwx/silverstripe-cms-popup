@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
 
 const STATUS_PENDING = 'pending';
@@ -34,151 +34,107 @@ const batchStyles = `
 @keyframes cms-modal-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
 `;
 
-// ── Form field renderers ──
-
-function CheckboxField({ field, value, onChange }) {
-  return (
-    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', marginBottom: '6px' }}>
-      <input
-        type="checkbox"
-        checked={!!value}
-        onChange={(e) => onChange(e.target.checked)}
-      />
-      {field.label}
-    </label>
-  );
-}
-
-function CheckboxGroupField({ field, value, onChange }) {
-  const selected = value || [];
-
-  const toggle = (val) => {
-    onChange(
-      selected.includes(val)
-        ? selected.filter((v) => v !== val)
-        : [...selected, val]
-    );
-  };
-
-  const selectAll = () => onChange((field.options || []).map((o) => o.value));
-  const deselectAll = () => onChange([]);
-
-  return (
-    <div style={{ marginBottom: '12px' }}>
-      <label style={{ fontWeight: 600, display: 'block', marginBottom: '8px' }}>
-        {field.label}
-      </label>
-      {field.selectAll && (
-        <div style={{ marginBottom: '6px' }}>
-          <button type="button" className="btn btn-sm btn-outline-secondary" onClick={selectAll} style={{ marginRight: '4px' }}>
-            Select all
-          </button>
-          <button type="button" className="btn btn-sm btn-outline-secondary" onClick={deselectAll}>
-            Deselect all
-          </button>
-        </div>
-      )}
-      {(field.options || []).map((opt) => (
-        <div key={opt.value} style={{ marginBottom: '4px' }}>
-          <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
-            <input
-              type="checkbox"
-              checked={selected.includes(opt.value)}
-              onChange={() => toggle(opt.value)}
-            />
-            {opt.label}
-          </label>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-// ── Main component ──
-
 const CmsModalBatch = ({ data, onClose }) => {
   const {
-    formFields = [],
+    formEndpoint,
     actionEndpoint,
     queueEndpoint,
     submitLabel = 'Start',
     baseQueue = [],
   } = data || {};
 
-  // Initialize form values
-  const getInitialValues = () => {
-    const vals = {};
-    formFields.forEach((f) => {
-      if (f.type === 'checkboxGroup') {
-        vals[f.name] = f.selectAll ? (f.options || []).map((o) => o.value) : [];
-      } else if (f.type === 'checkbox') {
-        vals[f.name] = f.defaultChecked || false;
-      }
-    });
-    return vals;
-  };
-
-  const [formValues, setFormValues] = useState(getInitialValues);
-  const [expandedItems, setExpandedItems] = useState([]);
-  const [loadingExpanded, setLoadingExpanded] = useState(false);
+  const formRef = useRef(null);
+  const [formHtml, setFormHtml] = useState('');
+  const [loadingForm, setLoadingForm] = useState(true);
+  const [formError, setFormError] = useState('');
   const [processing, setProcessing] = useState(false);
   const [done, setDone] = useState(false);
   const [progress, setProgress] = useState([]);
 
-  const setFieldValue = useCallback((name, value) => {
-    setFormValues((prev) => ({ ...prev, [name]: value }));
-  }, []);
+  useEffect(() => {
+    if (!formEndpoint) {
+      setFormError('No form endpoint configured');
+      setLoadingForm(false);
+      return;
+    }
 
-  // Handle expandsQueue checkbox
-  const handleExpandableChange = useCallback(async (field, checked) => {
-    setFieldValue(field.name, checked);
-    if (checked && expandedItems.length === 0 && queueEndpoint) {
-      setLoadingExpanded(true);
+    (async () => {
+      try {
+        const res = await fetch(formEndpoint, {
+          headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        });
+        if (!res.ok) {
+          setFormError(`HTTP ${res.status}`);
+        } else {
+          setFormHtml(await res.text());
+        }
+      } catch (e) {
+        setFormError(e.message || 'Network error');
+      } finally {
+        setLoadingForm(false);
+      }
+    })();
+  }, [formEndpoint]);
+
+  // Read form values from the server-rendered fields
+  const getFormValues = () => {
+    if (!formRef.current) return {};
+    const values = {};
+    const inputs = formRef.current.querySelectorAll('input, select, textarea');
+
+    inputs.forEach((input) => {
+      const { name, type } = input;
+      if (!name) return;
+
+      // SilverStripe CheckboxSetField: name="fieldName[key]"
+      const match = name.match(/^([^[]+)\[([^\]]*)\]$/);
+      if (match) {
+        const [, groupName, key] = match;
+        if (!values[groupName]) values[groupName] = [];
+        if (type === 'checkbox' && input.checked) {
+          values[groupName].push(key || input.value);
+        }
+        return;
+      }
+
+      if (type === 'checkbox') {
+        values[name] = input.checked;
+      } else if (type === 'radio') {
+        if (input.checked) values[name] = input.value;
+      } else {
+        values[name] = input.value;
+      }
+    });
+
+    return values;
+  };
+
+  const handleStart = async () => {
+    const formValues = getFormValues();
+
+    // Build queue
+    let queue = [...baseQueue];
+
+    // If recursive is checked, fetch children from queueEndpoint
+    if (formValues.recursive && queueEndpoint) {
       try {
         const res = await fetch(queueEndpoint, {
           headers: { 'X-Requested-With': 'XMLHttpRequest' },
         });
-        const contentType = res.headers.get('content-type') || '';
-        if (contentType.includes('application/json')) {
-          const json = await res.json();
-          setExpandedItems(json.items || []);
-        } else {
-          setExpandedItems([]);
+        if (res.ok) {
+          const contentType = res.headers.get('content-type') || '';
+          if (contentType.includes('application/json')) {
+            const json = await res.json();
+            (json.items || [])
+              .filter((item) => item.enabled !== false)
+              .forEach((item) => queue.push(item));
+          }
         }
       } catch (e) {
-        setExpandedItems([]);
-      } finally {
-        setLoadingExpanded(false);
+        // continue with base queue only
       }
     }
-  }, [queueEndpoint, expandedItems.length, setFieldValue]);
 
-  // Build queue for processing
-  const buildQueue = () => {
-    const queue = [...baseQueue];
-    // Check if any expandsQueue field is checked
-    const hasExpanded = formFields.some((f) => f.expandsQueue && formValues[f.name]);
-    if (hasExpanded) {
-      expandedItems
-        .filter((item) => item.enabled !== false)
-        .forEach((item) => queue.push(item));
-    }
-    return queue;
-  };
-
-  // Check if form is valid for submit
-  const canSubmit = () => {
-    for (const field of formFields) {
-      if (field.type === 'checkboxGroup' && (formValues[field.name] || []).length === 0) {
-        return false;
-      }
-    }
-    return true;
-  };
-
-  // Process queue
-  const handleStart = async () => {
-    const queue = buildQueue();
     if (queue.length === 0) return;
 
     setProcessing(true);
@@ -259,88 +215,45 @@ const CmsModalBatch = ({ data, onClose }) => {
       {/* eslint-disable-next-line react/no-danger */}
       <style dangerouslySetInnerHTML={{ __html: batchStyles }} />
 
-      {/* ── Form phase ── */}
+      {/* Form phase */}
       {!processing && !done && (
         <div style={{ padding: '20px' }}>
-          {formFields.map((field) => {
-            if (field.type === 'checkboxGroup') {
-              return (
-                <CheckboxGroupField
-                  key={field.name}
-                  field={field}
-                  value={formValues[field.name]}
-                  onChange={(val) => setFieldValue(field.name, val)}
-                />
-              );
-            }
-            if (field.type === 'checkbox' && field.expandsQueue) {
-              return (
-                <div key={field.name}>
-                  <CheckboxField
-                    field={field}
-                    value={formValues[field.name]}
-                    onChange={(val) => handleExpandableChange(field, val)}
-                  />
-                  {formValues[field.name] && (
-                    <div style={{ marginLeft: '24px', marginBottom: '12px' }}>
-                      {loadingExpanded && <span className="text-muted">Loading...</span>}
-                      {!loadingExpanded && expandedItems.length === 0 && (
-                        <span className="text-muted">No items found.</span>
-                      )}
-                      {!loadingExpanded && expandedItems.length > 0 && (
-                        <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: '0.9em' }}>
-                          {expandedItems.map((item) => (
-                            <li
-                              key={item.id}
-                              style={{
-                                padding: '2px 0 2px ' + ((item.depth || 0) * 20) + 'px',
-                                color: item.enabled !== false ? 'inherit' : '#999',
-                              }}
-                            >
-                              {item.enabled !== false ? '\u2714' : '\u2716'} {item.title}
-                              {item.enabled === false && item.disabledReason && (
-                                <span style={{ fontSize: '0.85em', marginLeft: '6px' }}>({item.disabledReason})</span>
-                              )}
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                    </div>
-                  )}
-                </div>
-              );
-            }
-            if (field.type === 'checkbox') {
-              return (
-                <CheckboxField
-                  key={field.name}
-                  field={field}
-                  value={formValues[field.name]}
-                  onChange={(val) => setFieldValue(field.name, val)}
-                />
-              );
-            }
-            return null;
-          })}
+          {loadingForm && (
+            <div style={{ textAlign: 'center' }}>
+              <span className="text-muted">Loading...</span>
+            </div>
+          )}
 
-          {/* Footer */}
-          <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid #dee2e6', display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-            <button
-              type="button"
-              className="btn btn-primary"
-              onClick={handleStart}
-              disabled={!canSubmit()}
-            >
-              {submitLabel}
-            </button>
-            <button type="button" className="btn btn-secondary" onClick={onClose}>
-              Cancel
-            </button>
-          </div>
+          {formError && (
+            <div className="alert alert-danger">{formError}</div>
+          )}
+
+          {!loadingForm && !formError && (
+            <>
+              <div
+                ref={formRef}
+                // eslint-disable-next-line react/no-danger
+                dangerouslySetInnerHTML={{ __html: formHtml }}
+              />
+
+              <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid #dee2e6', display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={handleStart}
+                >
+                  {submitLabel}
+                </button>
+                <button type="button" className="btn btn-secondary" onClick={onClose}>
+                  Cancel
+                </button>
+              </div>
+            </>
+          )}
         </div>
       )}
 
-      {/* ── Progress / Result phase ── */}
+      {/* Progress / Result phase */}
       {(processing || done) && (
         <div style={{ padding: '20px' }}>
           {/* Progress bar */}
@@ -411,7 +324,7 @@ const CmsModalBatch = ({ data, onClose }) => {
 
 CmsModalBatch.propTypes = {
   data: PropTypes.shape({
-    formFields: PropTypes.array,
+    formEndpoint: PropTypes.string,
     actionEndpoint: PropTypes.string,
     queueEndpoint: PropTypes.string,
     submitLabel: PropTypes.string,
