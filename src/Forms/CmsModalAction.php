@@ -78,9 +78,24 @@ class CmsModalAction extends FormAction
         $attrs['data-modal-title'] = $this->getModalTitle();
         $attrs['data-modal-data'] = json_encode($this->modalData);
         $attrs['data-modal-size'] = $this->modalSize;
-        // type=button prevents CMS form submission on click
         $attrs['type'] = 'button';
         return $attrs;
+    }
+
+    public function getSchemaDataDefaults(): array
+    {
+        $defaults = parent::getSchemaDataDefaults();
+        // Use dedicated React component so clicks are intercepted before
+        // FormBuilder.handleAction() can record a form submission action.
+        $defaults['component'] = 'CmsModalActionButton';
+        // Pass modal config via schema attributes so the React component
+        // receives them regardless of which admin section renders the form.
+        $defaults['attributes']['data-modal-component'] = $this->modalComponent;
+        $defaults['attributes']['data-modal-title'] = $this->getModalTitle();
+        $defaults['attributes']['data-modal-data'] = json_encode($this->modalData);
+        $defaults['attributes']['data-modal-size'] = $this->modalSize;
+        $defaults['attributes']['type'] = 'button';
+        return $defaults;
     }
 
     public function Type(): string
