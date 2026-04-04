@@ -2,6 +2,8 @@
 
 namespace Atwx\CmsPopup\Forms;
 
+use Atwx\CmsPopup\Control\CmsPopupSearchRouterController;
+
 class CmsModalSearchAction extends CmsModalAction
 {
     public function __construct(string $action, string $title)
@@ -20,5 +22,17 @@ class CmsModalSearchAction extends CmsModalAction
     {
         $this->modalData['searchEndpoint'] = $url;
         return $this;
+    }
+
+    /**
+     * Factory: create a CmsModalSearchAction pre-configured for a CmsPopupSearchHandler subclass.
+     */
+    public static function forHandler(string $handlerClass): static
+    {
+        $endpoints = CmsPopupSearchRouterController::endpointsForHandler($handlerClass);
+        $shortName = (new \ReflectionClass($handlerClass))->getShortName();
+        return static::create('search_' . strtolower($shortName), '')
+            ->setFormEndpoint($endpoints['searchForm'])
+            ->setResultsEndpoint($endpoints['searchResults']);
     }
 }

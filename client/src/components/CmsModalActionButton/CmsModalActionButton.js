@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { createRoot } from 'react-dom/client';
+import { Provider } from 'react-redux';
 import { loadComponent } from 'lib/Injector';
 
 const ROOT_KEY = '__cmsModalRoot';
@@ -54,13 +55,36 @@ class CmsModalActionButton extends Component {
       handleClose();
     };
 
+    const handleSaved = () => {
+      const grid = triggerEl.closest('.grid-field');
+      if (!grid || !window.jQuery) return;
+      const $ = window.jQuery;
+      const $grid = $(grid);
+      const data = $grid.closest('form')
+        .find(':input:not(.cms-content-filters :input, .relation-search)')
+        .serializeArray();
+      $.ajax({
+        headers: { 'X-Pjax': 'CurrentField' },
+        type: 'POST',
+        url: $grid.data('url'),
+        dataType: 'html',
+        data,
+        success(html) {
+          $grid.empty().append($(html).children());
+          $grid.trigger('reload', $grid);
+        },
+      });
+    };
+
     const CmsModal = loadComponent('CmsModal');
     const ContentComponent = loadComponent(componentName);
 
     root.render(
-      <CmsModal title={modalTitle} size={size} onClose={handleClose}>
-        <ContentComponent data={modalData} onClose={handleClose} onSelect={handleSelect} />
-      </CmsModal>
+      <Provider store={window.ss.store}>
+        <CmsModal title={modalTitle} size={size} onClose={handleClose}>
+          <ContentComponent data={modalData} onClose={handleClose} onSelect={handleSelect} onSaved={handleSaved} />
+        </CmsModal>
+      </Provider>
     );
   }
 

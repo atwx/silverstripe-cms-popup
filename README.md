@@ -1,6 +1,6 @@
 # silverstripe-cms-popup
 
-Opens modal dialogs in the SilverStripe CMS from a button in the form action menu. Three built-in content types: **Search** (search with result selection), **Batch** (sequential processing of a queue), and **Content** (generic HTML loader).
+Opens modal dialogs in the SilverStripe CMS from a button in the form action menu. Four built-in content types: **Search** (search with result selection), **Batch** (sequential processing of a queue), **Content** (generic HTML loader), and **FormSchema** (full SilverStripe form including HTMLEditorField).
 
 **Requirements:** SilverStripe 6, PHP 8.2+
 
@@ -228,6 +228,173 @@ $action->setModalData(['someParam' => 'value']);
 ```
 
 The component receives the props `data` (from `setModalData()`), `onClose` (callback), and `onSelect` (callback — dispatches `cms-modal:select` on the trigger element).
+
+---
+
+## FormSchema modal
+
+Opens a full SilverStripe form in the modal using `FormBuilderLoader`. Supports all CMS field types including `HTMLEditorField` (TinyMCE). The modal closes automatically after a successful save.
+
+```php
+use Atwx\CmsPopup\Forms\CmsModalFormSchemaAction;
+
+$action = CmsModalFormSchemaAction::create('editRecord', 'Record bearbeiten')
+    ->setSchemaUrl('/admin/pages/myPopupForm?recordID=' . $this->ID)
+    ->setFormIdentifier('myPopup_' . $this->ID)   // unique per record
+    ->setModalTitle('Record bearbeiten')
+    ->setModalSize('lg');                          // lg recommended for HTMLEditor
+```
+
+### PHP endpoint (LeftAndMainExtension)
+
+Create a `LeftAndMainExtension` on the relevant admin controller and declare two `allowed_actions`: one for the schema (GET) and one for saving (POST).
+
+```php
+use SilverStripe\Core\Extension;
+use SilverStripe\Control\HTTPResponse;
+use SilverStripe\Forms\FieldList;
+use SilverStripe\Forms\Form;
+use SilverStripe\Forms\FormAction;
+use SilverStripe\Forms\HTMLEditor\HTMLEditorField;
+use SilverStripe\Forms\TextField;
+
+class MyPopupExtension extends Extension
+{
+    private static array $allowed_actions = [
+        'myPopupForm',
+        'saveMyPopup',
+    ];
+
+    public function myPopupForm(): HTTPResponse
+    {
+        $id = (int) $this->owner->getRequest()->getVar('recordID');
+        $record = MyRecord::get()->byID($id);
+
+        if (!$record || !$record->canEdit()) {
+            return $this->owner->httpError(403);
+        }
+
+        $form = $this->buildForm($record);
+        return $this->owner->getSchemaResponse('myPopup_' . $id, $form);
+    }
+
+    public function saveMyPopup(): HTTPResponse
+    {
+        $id = (int) $this->owner->getRequest()->getVar('recordID');
+        $record = MyRecord::get()->byID($id);
+
+        if (!$record || !$record->canEdit()) {
+            return $this->owner->httpError(403);
+        }
+
+        $form = $this->buildForm($record);
+        $form->loadDataFrom($this->owner->getRequest()->postVars());
+
+        if ($form->validationResult()->isValid()) {
+            $form->saveInto($record);
+            $record->write();
+        }
+
+        return $this->owner->getSchemaResponse('myPopup_' . $id, $form);
+    }
+
+    protected function buildForm(MyRecord $record): Form
+    {
+        $fields = FieldList::create(
+            TextField::create('Title', 'Titel'),
+            HTMLEditorField::create('Content', 'Inhalt')->setRows(8),
+        );
+        $actions = FieldList::create(
+            FormAction::create('saveMyPopup', 'Speichern')
+                ->addExtraClass('btn-primary'),
+        );
+        $form = Form::create($this->owner, 'myPopupForm', $fields, $actions);
+        $form->loadDataFrom($record);
+        $form->setFormAction(
+            $this->owner->Link('saveMyPopup') . '?recordID=' . $record->ID
+        );
+        return $form;
+    }
+}
+```
+
+Apply the extension in YAML:
+
+```yaml
+SilverStripe\CMS\Controllers\CMSPageEditController:
+  extensions:
+    - MyNamespace\MyPopupExtension
+```
+
+### Using the button from a GridField column
+
+For a per-row popup button inside a `GridField`, use `GridField_ColumnProvider` and render the trigger element directly as HTML. The `cms-modal-action` CSS class is picked up by the module's jQuery Entwine and opens the modal without any additional JavaScript.
+
+```php
+use SilverStripe\Admin\LeftAndMain;
+use SilverStripe\Forms\GridField\GridField;
+use SilverStripe\Forms\GridField\GridField_ColumnProvider;
+use SilverStripe\ORM\DataObject;
+
+class MyGridFieldPopupColumn implements GridField_ColumnProvider
+{
+    public function augmentColumns(GridField $gridField, array &$columns): void
+    {
+        if (!in_array('PopupEdit', $columns, true)) {
+            $columns[] = 'PopupEdit';
+        }
+    }
+
+    public function getColumnsHandled(GridField $gridField): array
+    {
+        return ['PopupEdit'];
+    }
+
+    public function getColumnContent(GridField $gridField, DataObject $record, string $columnName): string
+    {
+        if (!$record->canEdit()) {
+            return '';
+        }
+
+        $schemaUrl = LeftAndMain::singleton()->Link('myPopupForm') . '?recordID=' . $record->ID;
+        $modalData = htmlspecialchars(
+            json_encode([
+                'schemaUrl'  => $schemaUrl,
+                'identifier' => 'myPopup_' . $record->ID,
+            ]),
+            ENT_QUOTES
+        );
+
+        return sprintf(
+            '<a href="#" role="button"'
+            . ' class="btn btn--no-text btn--icon-md cms-modal-action"'
+            . ' data-modal-component="CmsModalFormSchema"'
+            . ' data-modal-title="Record bearbeiten"'
+            . ' data-modal-data="%s"'
+            . ' data-modal-size="lg">'
+            . '<span class="btn__icon font-icon-edit"></span>'
+            . '</a>',
+            $modalData
+        );
+    }
+
+    public function getColumnAttributes(GridField $gridField, DataObject $record, string $columnName): array
+    {
+        return ['class' => 'grid-field__col-compact'];
+    }
+
+    public function getColumnMetadata(GridField $gridField, string $columnName): array
+    {
+        return ['title' => ''];
+    }
+}
+```
+
+Add the column to the GridField config:
+
+```php
+$config->addComponent(new MyGridFieldPopupColumn());
+```
 
 ---
 

@@ -6,3 +6,8 @@ SilverStripe\Admin\LeftAndMain:
     - 'atwx/silverstripe-cms-popup: client/dist/js/bundle.js'
   extra_requirements_css:
     - 'atwx/silverstripe-cms-popup: client/dist/css/cms-popup.css'
+
+SilverStripe\Control\Director:
+  rules:
+    'cms-search//$Action': 'Atwx\CmsPopup\Control\CmsPopupSearchRouterController'
+    'cms-batch//$Action': 'Atwx\CmsPopup\Control\CmsPopupBatchRouterController'

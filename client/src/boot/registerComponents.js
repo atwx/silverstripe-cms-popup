@@ -4,6 +4,7 @@ import CmsModalContent from '../components/CmsModalContent/CmsModalContent';
 import CmsModalBatch from '../components/CmsModalBatch/CmsModalBatch';
 import CmsModalSearch from '../components/CmsModalSearch/CmsModalSearch';
 import CmsModalActionButton from '../components/CmsModalActionButton/CmsModalActionButton';
+import CmsModalFormSchema from '../components/CmsModalFormSchema/CmsModalFormSchema';
 
 export default () => {
   Injector.component.registerMany({
@@ -12,5 +13,6 @@ export default () => {
     CmsModalBatch,
     CmsModalSearch,
     CmsModalActionButton,
+    CmsModalFormSchema,
   });
 };

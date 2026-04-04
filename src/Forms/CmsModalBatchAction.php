@@ -2,6 +2,8 @@
 
 namespace Atwx\CmsPopup\Forms;
 
+use Atwx\CmsPopup\Control\CmsPopupBatchRouterController;
+
 class CmsModalBatchAction extends CmsModalAction
 {
     public function __construct(string $action, string $title)
@@ -38,5 +40,19 @@ class CmsModalBatchAction extends CmsModalAction
     {
         $this->modalData['baseQueue'] = $queue;
         return $this;
+    }
+
+    /**
+     * Factory: create a CmsModalBatchAction pre-configured for a CmsPopupBatchHandler subclass.
+     * Pass $params to also populate the queue endpoint (e.g. ['ClassName' => ..., 'ID' => ...]).
+     */
+    public static function forHandler(string $handlerClass, array $params = [], string $title = ''): static
+    {
+        $endpoints = CmsPopupBatchRouterController::endpointsForHandler($handlerClass, $params);
+        $shortName = (new \ReflectionClass($handlerClass))->getShortName();
+        return static::create('batch_' . strtolower($shortName), $title)
+            ->setFormEndpoint($endpoints['form'])
+            ->setActionEndpoint($endpoints['execute'])
+            ->setQueueEndpoint($endpoints['queue']);
     }
 }

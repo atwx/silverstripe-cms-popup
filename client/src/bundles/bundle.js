@@ -1,5 +1,5 @@
 import registerComponents from '../boot/registerComponents';
-import '../legacy/CmsModalEntwine';
+import '../boot/CmsModalInit';
 
 window.document.addEventListener('DOMContentLoaded', () => {
   registerComponents();

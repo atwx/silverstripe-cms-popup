@@ -13,7 +13,8 @@ const CmsModalSearch = ({ data, onSelect }) => {
     if (!searchEndpoint) return;
 
     const params = new URLSearchParams(formValues).toString();
-    const url = params ? `${searchEndpoint}?${params}` : searchEndpoint;
+    const sep = searchEndpoint.includes('?') ? '&' : '?';
+    const url = params ? `${searchEndpoint}${sep}${params}` : searchEndpoint;
 
     setSearching(true);
     setResultsHtml('');
