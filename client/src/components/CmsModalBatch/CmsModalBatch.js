@@ -7,7 +7,7 @@ const STATUS_PENDING = 'pending';
 const STATUS_RUNNING = 'running';
 const STATUS_SUCCESS = 'success';
 const STATUS_WARNING = 'warning';
-const STATUS_ERROR   = 'error';
+const STATUS_ERROR = 'error';
 
 const CmsModalBatch = ({ data, onClose }) => {
   const {
@@ -23,7 +23,7 @@ const CmsModalBatch = ({ data, onClose }) => {
   const [progress, setProgress] = useState([]);
 
   const handleStart = async (formValues) => {
-    let queue = [...baseQueue];
+    const queue = [...baseQueue];
 
     if (formValues.recursive && queueEndpoint) {
       try {
@@ -39,7 +39,7 @@ const CmsModalBatch = ({ data, onClose }) => {
               .forEach((item) => queue.push(item));
           }
         }
-      } catch (e) {
+      } catch (_e) {
         // continue with base queue only
       }
     }
@@ -61,7 +61,7 @@ const CmsModalBatch = ({ data, onClose }) => {
       const item = queue[i];
 
       setProgress((prev) =>
-        prev.map((p, idx) => (idx === i ? { ...p, status: STATUS_RUNNING } : p))
+        prev.map((p, idx) => (idx === i ? { ...p, status: STATUS_RUNNING } : p)),
       );
 
       try {
@@ -81,15 +81,23 @@ const CmsModalBatch = ({ data, onClose }) => {
           result = await res.json();
         } else {
           const html = await res.text();
-          const errorMsg = html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().substring(0, 300);
-          result = { status: 'Error', message: `Server error (${res.status}): ${errorMsg}`, details: [] };
+          const errorMsg = html
+            .replace(/<[^>]+>/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim()
+            .substring(0, 300);
+          result = {
+            status: 'Error',
+            message: `Server error (${res.status}): ${errorMsg}`,
+            details: [],
+          };
         }
 
         if (!res.ok && !result.message) {
           result.message = `HTTP ${res.status}`;
         }
 
-        const hasError   = !res.ok || (result.details || []).some((d) => d.level === 'error');
+        const hasError = !res.ok || (result.details || []).some((d) => d.level === 'error');
         const hasWarning = (result.details || []).some((d) => d.level === 'warning');
         let itemStatus = STATUS_SUCCESS;
         if (hasError) itemStatus = STATUS_ERROR;
@@ -98,15 +106,20 @@ const CmsModalBatch = ({ data, onClose }) => {
         setProgress((prev) =>
           prev.map((p, idx) =>
             idx === i
-              ? { ...p, status: itemStatus, details: result.details || [], message: result.message || '' }
-              : p
-          )
+              ? {
+                  ...p,
+                  status: itemStatus,
+                  details: result.details || [],
+                  message: result.message || '',
+                }
+              : p,
+          ),
         );
       } catch (e) {
         setProgress((prev) =>
           prev.map((p, idx) =>
-            idx === i ? { ...p, status: STATUS_ERROR, message: e.message || 'Network error' } : p
-          )
+            idx === i ? { ...p, status: STATUS_ERROR, message: e.message || 'Network error' } : p,
+          ),
         );
       }
     }
@@ -126,13 +139,7 @@ const CmsModalBatch = ({ data, onClose }) => {
     );
   }
 
-  return (
-    <CmsModalBatchProgress
-      items={progress}
-      isProcessing={processing}
-      onClose={onClose}
-    />
-  );
+  return <CmsModalBatchProgress items={progress} isProcessing={processing} onClose={onClose} />;
 };
 
 CmsModalBatch.propTypes = {

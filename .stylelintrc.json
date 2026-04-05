@@ -1,0 +1,10 @@
+{
+  "extends": ["stylelint-config-standard-scss"],
+  "rules": {
+    "selector-class-pattern": "^(cms-popup|cms-modal)[a-z0-9_-]*$",
+    "custom-property-pattern": null,
+    "alpha-value-notation": "number",
+    "color-function-notation": "legacy"
+  },
+  "ignoreFiles": ["client/dist/**"]
+}

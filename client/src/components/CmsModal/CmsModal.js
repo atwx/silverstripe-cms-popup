@@ -9,9 +9,7 @@ const CmsModal = ({ title, size, onClose, children }) => (
   <CmsModalOverlay onClose={onClose}>
     <CmsModalDialog size={size}>
       <CmsModalHeader title={title} onClose={onClose} />
-      <CmsModalBody>
-        {children}
-      </CmsModalBody>
+      <CmsModalBody>{children}</CmsModalBody>
     </CmsModalDialog>
   </CmsModalOverlay>
 );

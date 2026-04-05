@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 // FormBuilderLoader is exposed as window.FormBuilderLoader by the admin bundle.
 // The webpack-external maps this import path to that global at build time.
-// eslint-disable-next-line import/no-unresolved
 import FormBuilderLoader from 'containers/FormBuilderLoader/FormBuilderLoader';
 
 /**

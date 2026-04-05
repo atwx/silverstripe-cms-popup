@@ -6,11 +6,11 @@ import CmsModalFooter from '../CmsModal/CmsModalFooter';
 const CmsModalBatchProgress = ({ items, isProcessing, onClose }) => {
   const totalCount = items.length;
   const completedCount = items.filter(
-    (p) => p.status !== 'pending' && p.status !== 'running'
+    (p) => p.status !== 'pending' && p.status !== 'running',
   ).length;
   const successCount = items.filter((p) => p.status === 'success').length;
   const warningCount = items.filter((p) => p.status === 'warning').length;
-  const errorCount   = items.filter((p) => p.status === 'error').length;
+  const errorCount = items.filter((p) => p.status === 'error').length;
 
   const progressPct = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
   const isDone = !isProcessing;
@@ -22,7 +22,9 @@ const CmsModalBatchProgress = ({ items, isProcessing, onClose }) => {
       <div className="cms-popup__progress">
         <div className="cms-popup__progress-label">
           <span>{isProcessing ? 'Processing...' : 'Done'}</span>
-          <span>{completedCount} / {totalCount}</span>
+          <span>
+            {completedCount} / {totalCount}
+          </span>
         </div>
         <div className="cms-popup__progress-track">
           <div
@@ -40,12 +42,14 @@ const CmsModalBatchProgress = ({ items, isProcessing, onClose }) => {
           )}
           {warningCount > 0 && (
             <span className="cms-popup__summary-warning">
-              {successCount > 0 ? ', ' : ''}{warningCount} warnings
+              {successCount > 0 ? ', ' : ''}
+              {warningCount} warnings
             </span>
           )}
           {errorCount > 0 && (
             <span className="cms-popup__summary-error">
-              {(successCount + warningCount) > 0 ? ', ' : ''}{errorCount} errors
+              {successCount + warningCount > 0 ? ', ' : ''}
+              {errorCount} errors
             </span>
           )}
         </div>

@@ -48,10 +48,12 @@ function openModal(triggerEl) {
   };
 
   const handleSelect = (selectedData) => {
-    triggerEl.dispatchEvent(new CustomEvent('cms-modal:select', {
-      detail: selectedData,
-      bubbles: true,
-    }));
+    triggerEl.dispatchEvent(
+      new CustomEvent('cms-modal:select', {
+        detail: selectedData,
+        bubbles: true,
+      }),
+    );
     handleClose();
   };
 
@@ -60,7 +62,8 @@ function openModal(triggerEl) {
     if (!grid || !window.jQuery) return;
     const $ = window.jQuery;
     const $grid = $(grid);
-    const data = $grid.closest('form')
+    const data = $grid
+      .closest('form')
       .find(':input:not(.cms-content-filters :input, .relation-search)')
       .serializeArray();
     $.ajax({
@@ -82,9 +85,14 @@ function openModal(triggerEl) {
   root.render(
     <Provider store={window.ss.store}>
       <CmsModal title={title} size={size} onClose={handleClose}>
-        <ContentComponent data={modalData} onClose={handleClose} onSelect={handleSelect} onSaved={handleSaved} />
+        <ContentComponent
+          data={modalData}
+          onClose={handleClose}
+          onSelect={handleSelect}
+          onSaved={handleSaved}
+        />
       </CmsModal>
-    </Provider>
+    </Provider>,
   );
 }
 
@@ -92,10 +100,14 @@ function openModal(triggerEl) {
 // form-submit handlers and before React's synthetic event system. This prevents
 // the CMS from treating the button click as a form submission (which would POST
 // to the edit-form URL and produce a 404).
-document.addEventListener('click', (e) => {
-  const trigger = e.target.closest('.cms-modal-action');
-  if (!trigger) return;
-  e.preventDefault();
-  e.stopPropagation();
-  openModal(trigger);
-}, true);
+document.addEventListener(
+  'click',
+  (e) => {
+    const trigger = e.target.closest('.cms-modal-action');
+    if (!trigger) return;
+    e.preventDefault();
+    e.stopPropagation();
+    openModal(trigger);
+  },
+  true,
+);

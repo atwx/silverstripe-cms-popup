@@ -1,0 +1,6 @@
+client/dist/
+vendor/
+node_modules/
+*.yml
+*.xml
+*.json

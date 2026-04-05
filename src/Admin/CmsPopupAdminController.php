@@ -57,7 +57,8 @@ class CmsPopupAdminController extends LeftAndMain
     {
         $handlerClass = $request->getVar('handler');
 
-        if (!$handlerClass
+        if (
+            !$handlerClass
             || !class_exists($handlerClass)
             || !is_subclass_of($handlerClass, CmsPopupHandler::class)
         ) {
@@ -115,7 +116,11 @@ class CmsPopupAdminController extends LeftAndMain
         $params = $vars;
         unset($params['handler']);
         ksort($params);
-        $id = empty($params) ? '' : '_' . implode('_', array_values($params));
+        $id = empty($params) ? '' : '_' . implode('_', array_map(
+            fn($k, $v) => "{$k}-{$v}",
+            array_keys($params),
+            array_values($params)
+        ));
         return $shortName . $id;
     }
 

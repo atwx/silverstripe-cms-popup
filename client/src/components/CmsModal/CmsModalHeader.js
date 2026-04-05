@@ -4,12 +4,7 @@ import PropTypes from 'prop-types';
 const CmsModalHeader = ({ title, onClose }) => (
   <div className="cms-popup__header">
     <strong id="cms-popup-title">{title}</strong>
-    <button
-      type="button"
-      className="btn-close"
-      onClick={onClose}
-      aria-label="Close"
-    />
+    <button type="button" className="btn-close" onClick={onClose} aria-label="Close" />
   </div>
 );
 

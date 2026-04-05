@@ -2,11 +2,14 @@ import React, { useEffect, useCallback } from 'react';
 import PropTypes from 'prop-types';
 
 const CmsModalOverlay = ({ onClose, children }) => {
-  const handleKeyDown = useCallback((e) => {
-    if (e.key === 'Escape') {
-      onClose();
-    }
-  }, [onClose]);
+  const handleKeyDown = useCallback(
+    (e) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    },
+    [onClose],
+  );
 
   useEffect(() => {
     document.addEventListener('keydown', handleKeyDown);
@@ -14,11 +17,7 @@ const CmsModalOverlay = ({ onClose, children }) => {
   }, [handleKeyDown]);
 
   return (
-    <div
-      className="cms-popup"
-      onClick={onClose}
-      role="presentation"
-    >
+    <div className="cms-popup" onClick={onClose} role="presentation">
       {children}
     </div>
   );

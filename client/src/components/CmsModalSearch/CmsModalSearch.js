@@ -1,51 +1,84 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import CmsModalSearchForm from './CmsModalSearchForm';
 import CmsModalSearchResults from './CmsModalSearchResults';
 
 const CmsModalSearch = ({ data, onSelect }) => {
-  const { formEndpoint, searchEndpoint } = data || {};
+  const { formEndpoint, searchEndpoint, autoSearch = true, initialQuery = '' } = data || {};
 
   const [resultsHtml, setResultsHtml] = useState('');
   const [searching, setSearching] = useState(false);
+  const [initialized, setInitialized] = useState(false);
 
-  const doSearch = useCallback(async (formValues) => {
-    if (!searchEndpoint) return;
+  // Perform initial search on mount if autoSearch is enabled
+  useEffect(() => {
+    if (!autoSearch || !searchEndpoint || initialized) return;
 
-    const params = new URLSearchParams(formValues).toString();
-    const sep = searchEndpoint.includes('?') ? '&' : '?';
-    const url = params ? `${searchEndpoint}${sep}${params}` : searchEndpoint;
+    const doInitialSearch = async () => {
+      setSearching(true);
+      setResultsHtml('');
 
-    setSearching(true);
-    setResultsHtml('');
+      try {
+        const q = encodeURIComponent(initialQuery);
+        const url = searchEndpoint.includes('?')
+          ? `${searchEndpoint}&q=${q}`
+          : `${searchEndpoint}?q=${q}`;
 
-    try {
-      const res = await fetch(url, {
-        headers: { 'X-Requested-With': 'XMLHttpRequest' },
-      });
-      if (!res.ok) {
-        setResultsHtml(`<div class="alert alert-danger">HTTP ${res.status}</div>`);
-      } else {
-        setResultsHtml(await res.text());
+        const res = await fetch(url, {
+          headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        });
+
+        if (!res.ok) {
+          setResultsHtml(`<div class="alert alert-danger">HTTP ${res.status}</div>`);
+        } else {
+          setResultsHtml(await res.text());
+        }
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.error('Initial search error:', e);
+        setResultsHtml(`<div class="alert alert-danger">${e.message || 'Network error'}</div>`);
+      } finally {
+        setSearching(false);
+        setInitialized(true);
       }
-    } catch (e) {
-      setResultsHtml(`<div class="alert alert-danger">${e.message || 'Network error'}</div>`);
-    } finally {
-      setSearching(false);
-    }
-  }, [searchEndpoint]);
+    };
+
+    doInitialSearch();
+  }, [autoSearch, searchEndpoint, initialQuery, initialized]);
+
+  const doSearch = useCallback(
+    async (formValues) => {
+      if (!searchEndpoint) return;
+
+      const params = new URLSearchParams(formValues).toString();
+      const sep = searchEndpoint.includes('?') ? '&' : '?';
+      const url = params ? `${searchEndpoint}${sep}${params}` : searchEndpoint;
+
+      setSearching(true);
+      setResultsHtml('');
+
+      try {
+        const res = await fetch(url, {
+          headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        });
+        if (!res.ok) {
+          setResultsHtml(`<div class="alert alert-danger">HTTP ${res.status}</div>`);
+        } else {
+          setResultsHtml(await res.text());
+        }
+      } catch (e) {
+        setResultsHtml(`<div class="alert alert-danger">${e.message || 'Network error'}</div>`);
+      } finally {
+        setSearching(false);
+      }
+    },
+    [searchEndpoint],
+  );
 
   return (
     <>
-      <CmsModalSearchForm
-        formEndpoint={formEndpoint}
-        onSearch={doSearch}
-      />
-      <CmsModalSearchResults
-        html={resultsHtml}
-        searching={searching}
-        onSelect={onSelect}
-      />
+      <CmsModalSearchForm formEndpoint={formEndpoint} onSearch={doSearch} />
+      <CmsModalSearchResults html={resultsHtml} searching={searching} onSelect={onSelect} />
     </>
   );
 };
@@ -54,6 +87,8 @@ CmsModalSearch.propTypes = {
   data: PropTypes.shape({
     formEndpoint: PropTypes.string,
     searchEndpoint: PropTypes.string,
+    autoSearch: PropTypes.bool,
+    initialQuery: PropTypes.string,
   }),
   onSelect: PropTypes.func,
 };
@@ -61,6 +96,8 @@ CmsModalSearch.propTypes = {
 CmsModalSearch.defaultProps = {
   data: {},
   onSelect: () => {},
+  autoSearch: true,
+  initialQuery: '',
 };
 
 export default CmsModalSearch;

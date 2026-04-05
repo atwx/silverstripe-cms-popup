@@ -21,8 +21,12 @@ class CmsPopupBatchResponse
         return self::respond('Error', $message, $details, 422);
     }
 
-    private static function respond(string $status, string $message, array $details, int $httpStatus = 200): HTTPResponse
-    {
+    private static function respond(
+        string $status,
+        string $message,
+        array $details,
+        int $httpStatus = 200
+    ): HTTPResponse {
         $response = HTTPResponse::create();
         $response->setStatusCode($httpStatus);
         $response->addHeader('Content-Type', 'application/json');

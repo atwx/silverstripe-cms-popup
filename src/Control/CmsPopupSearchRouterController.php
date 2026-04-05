@@ -59,7 +59,9 @@ class CmsPopupSearchRouterController extends Controller
         if (strlen($query) < $handler->getMinQueryLength()) {
             return $this->htmlResponse(
                 '<div style="color: #6c757d; text-align: center; padding: 20px;">'
-                . _t(self::class . '.MIN_CHARS', 'Bitte mindestens {n} Zeichen eingeben.', ['n' => $handler->getMinQueryLength()])
+                . _t(self::class . '.MIN_CHARS', 'Bitte mindestens {n} Zeichen eingeben.', [
+                    'n' => $handler->getMinQueryLength(),
+                ])
                 . '</div>'
             );
         }

@@ -98,6 +98,7 @@ class CmsModalAction extends FormAction
         return $defaults;
     }
 
+    // phpcs:ignore PSR1.Methods.CamelCapsMethodName.NotCamelCaps -- overrides SilverStripe's FormField::Type()
     public function Type(): string
     {
         return 'cms-modal-action action';

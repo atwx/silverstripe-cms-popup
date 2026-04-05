@@ -15,20 +15,12 @@ use SilverStripe\ORM\DataObject;
  */
 class CmsPopupGridFieldColumn implements GridField_ColumnProvider
 {
-    protected string $handlerClass;
-
-    protected string $idParam;
-
-    protected string $title;
-
-    protected string $size;
-
-    public function __construct(string $handlerClass, string $idParam, string $title = 'Bearbeiten', string $size = 'lg')
-    {
-        $this->handlerClass = $handlerClass;
-        $this->idParam = $idParam;
-        $this->title = $title;
-        $this->size = $size;
+    public function __construct(
+        protected string $handlerClass,
+        protected string $idParam,
+        protected string $title = 'Bearbeiten',
+        protected string $size = 'lg'
+    ) {
     }
 
     public function augmentColumns($gridField, &$columns): void
