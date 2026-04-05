@@ -48,10 +48,12 @@ class CmsModalActionButton extends Component {
     };
 
     const handleSelect = (selectedData) => {
-      triggerEl.dispatchEvent(new CustomEvent('cms-modal:select', {
-        detail: selectedData,
-        bubbles: true,
-      }));
+      triggerEl.dispatchEvent(
+        new CustomEvent('cms-modal:select', {
+          detail: selectedData,
+          bubbles: true,
+        }),
+      );
       handleClose();
     };
 
@@ -60,7 +62,8 @@ class CmsModalActionButton extends Component {
       if (!grid || !window.jQuery) return;
       const $ = window.jQuery;
       const $grid = $(grid);
-      const data = $grid.closest('form')
+      const data = $grid
+        .closest('form')
         .find(':input:not(.cms-content-filters :input, .relation-search)')
         .serializeArray();
       $.ajax({
@@ -82,9 +85,14 @@ class CmsModalActionButton extends Component {
     root.render(
       <Provider store={window.ss.store}>
         <CmsModal title={modalTitle} size={size} onClose={handleClose}>
-          <ContentComponent data={modalData} onClose={handleClose} onSelect={handleSelect} onSaved={handleSaved} />
+          <ContentComponent
+            data={modalData}
+            onClose={handleClose}
+            onSelect={handleSelect}
+            onSaved={handleSaved}
+          />
         </CmsModal>
-      </Provider>
+      </Provider>,
     );
   }
 

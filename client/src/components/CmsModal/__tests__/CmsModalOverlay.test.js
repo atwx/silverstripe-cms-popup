@@ -29,7 +29,11 @@ describe('CmsModalOverlay', () => {
     const addSpy = jest.spyOn(document, 'addEventListener');
     const removeSpy = jest.spyOn(document, 'removeEventListener');
 
-    const { unmount } = render(<CmsModalOverlay onClose={handleClose}><span /></CmsModalOverlay>);
+    const { unmount } = render(
+      <CmsModalOverlay onClose={handleClose}>
+        <span />
+      </CmsModalOverlay>,
+    );
 
     expect(addSpy).toHaveBeenCalledWith('keydown', expect.any(Function));
     unmount();

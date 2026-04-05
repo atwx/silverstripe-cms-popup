@@ -1,2 +1,3 @@
-// Stub for CSS/SCSS imports – irrelevant in Jest
+// Stub for CSS/SCSS imports and SilverStripe webpack-external aliases
+// that cannot be resolved in the Jest environment.
 module.exports = {};

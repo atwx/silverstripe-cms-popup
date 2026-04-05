@@ -4,9 +4,9 @@
  * call loadComponent() without needing a full SilverStripe stack.
  */
 const loadComponent = (name) => {
-  const mock = (props) => null; // eslint-disable-line react/display-name
-  mock.displayName = `MockComponent(${name})`;
-  return mock;
+  const Mock = () => null;
+  Mock.displayName = `MockComponent(${name})`;
+  return Mock;
 };
 
-export { loadComponent };
+module.exports = { loadComponent };

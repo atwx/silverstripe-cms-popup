@@ -45,43 +45,39 @@ const CmsModalSearch = ({ data, onSelect }) => {
     doInitialSearch();
   }, [autoSearch, searchEndpoint, initialized]);
 
-  const doSearch = useCallback(async (formValues) => {
-    if (!searchEndpoint) return;
+  const doSearch = useCallback(
+    async (formValues) => {
+      if (!searchEndpoint) return;
 
-    const params = new URLSearchParams(formValues).toString();
-    const sep = searchEndpoint.includes('?') ? '&' : '?';
-    const url = params ? `${searchEndpoint}${sep}${params}` : searchEndpoint;
+      const params = new URLSearchParams(formValues).toString();
+      const sep = searchEndpoint.includes('?') ? '&' : '?';
+      const url = params ? `${searchEndpoint}${sep}${params}` : searchEndpoint;
 
-    setSearching(true);
-    setResultsHtml('');
+      setSearching(true);
+      setResultsHtml('');
 
-    try {
-      const res = await fetch(url, {
-        headers: { 'X-Requested-With': 'XMLHttpRequest' },
-      });
-      if (!res.ok) {
-        setResultsHtml(`<div class="alert alert-danger">HTTP ${res.status}</div>`);
-      } else {
-        setResultsHtml(await res.text());
+      try {
+        const res = await fetch(url, {
+          headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        });
+        if (!res.ok) {
+          setResultsHtml(`<div class="alert alert-danger">HTTP ${res.status}</div>`);
+        } else {
+          setResultsHtml(await res.text());
+        }
+      } catch (e) {
+        setResultsHtml(`<div class="alert alert-danger">${e.message || 'Network error'}</div>`);
+      } finally {
+        setSearching(false);
       }
-    } catch (e) {
-      setResultsHtml(`<div class="alert alert-danger">${e.message || 'Network error'}</div>`);
-    } finally {
-      setSearching(false);
-    }
-  }, [searchEndpoint]);
+    },
+    [searchEndpoint],
+  );
 
   return (
     <>
-      <CmsModalSearchForm
-        formEndpoint={formEndpoint}
-        onSearch={doSearch}
-      />
-      <CmsModalSearchResults
-        html={resultsHtml}
-        searching={searching}
-        onSelect={onSelect}
-      />
+      <CmsModalSearchForm formEndpoint={formEndpoint} onSearch={doSearch} />
+      <CmsModalSearchResults html={resultsHtml} searching={searching} onSelect={onSelect} />
     </>
   );
 };

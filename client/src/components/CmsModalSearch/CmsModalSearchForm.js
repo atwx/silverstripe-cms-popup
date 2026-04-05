@@ -69,7 +69,10 @@ const CmsModalSearchForm = ({ formEndpoint, onSearch }) => {
     container.addEventListener('submit', handleSubmit, true);
 
     const handleInput = (e) => {
-      if (e.target.tagName === 'INPUT' && (e.target.type === 'text' || e.target.type === 'search')) {
+      if (
+        e.target.tagName === 'INPUT' &&
+        (e.target.type === 'text' || e.target.type === 'search')
+      ) {
         if (debounceRef.current) clearTimeout(debounceRef.current);
         debounceRef.current = setTimeout(() => {
           onSearch(getFormValues());

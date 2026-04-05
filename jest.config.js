@@ -2,8 +2,8 @@
 module.exports = {
   testEnvironment: 'jsdom',
 
-  // Run @testing-library/jest-dom matchers (toBeInTheDocument etc.) for every test
-  setupFilesAfterFramework: ['@testing-library/jest-dom'],
+  // Runs @testing-library/jest-dom matchers (toBeInTheDocument etc.) for every test
+  setupFilesAfterEnv: ['@testing-library/jest-dom'],
 
   // Transpile JS/JSX via babel.config.js
   transform: {
@@ -14,6 +14,8 @@ module.exports = {
   moduleNameMapper: {
     // lib/Injector is provided by silverstripe/admin at runtime
     '^lib/Injector$': '<rootDir>/client/src/__mocks__/Injector.js',
+    // containers/* is provided by silverstripe/admin at runtime
+    '^containers/(.*)$': '<rootDir>/client/src/__mocks__/fileMock.js',
     // CSS/SCSS imports are irrelevant in tests
     '\\.(css|scss)$': '<rootDir>/client/src/__mocks__/fileMock.js',
   },

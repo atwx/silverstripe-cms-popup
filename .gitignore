@@ -1,2 +1,13 @@
 node_modules/
 .vscode
+
+# PHP dependencies (libraries don't commit their lock file)
+vendor/
+composer.lock
+
+# SilverStripe vendor-plugin exposes assets here
+public/
+
+# Tool caches
+.phpunit.result.cache
+.php-cs-fixer.cache

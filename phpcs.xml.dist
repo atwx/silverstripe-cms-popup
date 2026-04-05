@@ -9,11 +9,14 @@
     <arg value="p"/>
     <arg name="extensions" value="php"/>
 
-    <!-- SilverStripe coding standard (extends PSR-12) -->
-    <rule ref="SilverStripe"/>
+    <!-- PSR-12 is the SilverStripe 5/6 coding standard baseline -->
+    <rule ref="PSR12"/>
 
-    <!-- Exclude test files from the SilverStripe.Files.ClassFound sniff -->
-    <rule ref="SilverStripe.Files.ClassFound">
-        <exclude-pattern>tests/</exclude-pattern>
+    <!-- Allow long lines for complex array/string operations -->
+    <rule ref="Generic.Files.LineLength">
+        <properties>
+            <property name="lineLimit" value="120"/>
+            <property name="absoluteLineLimit" value="0"/>
+        </properties>
     </rule>
 </ruleset>

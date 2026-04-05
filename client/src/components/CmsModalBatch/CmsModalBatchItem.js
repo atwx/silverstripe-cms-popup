@@ -13,9 +13,7 @@ const CmsModalBatchItem = ({ item }) => {
         <span className="cms-popup__item-id">#{id}</span>
       </div>
 
-      {message && (
-        <div className="cms-popup__item-message">{message}</div>
-      )}
+      {message && <div className="cms-popup__item-message">{message}</div>}
 
       {details && details.length > 0 && (
         <ul className="cms-popup__item-details">

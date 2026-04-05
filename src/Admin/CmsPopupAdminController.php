@@ -57,7 +57,8 @@ class CmsPopupAdminController extends LeftAndMain
     {
         $handlerClass = $request->getVar('handler');
 
-        if (!$handlerClass
+        if (
+            !$handlerClass
             || !class_exists($handlerClass)
             || !is_subclass_of($handlerClass, CmsPopupHandler::class)
         ) {
